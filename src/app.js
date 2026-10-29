@@ -17,7 +17,12 @@ function createApp({ repos, rateLimitMax = 300 }) {
   // Swagger UI usa scripts inline, por eso se relaja la CSP solo en /docs.
   const spec = loadSpec();
   app.get('/docs/openapi.json', (_req, res) => res.json(spec));
-  app.use('/docs', helmet({ contentSecurityPolicy: false }), swaggerUi.serve, swaggerUi.setup(spec));
+  app.use(
+    '/docs',
+    helmet({ contentSecurityPolicy: false }),
+    swaggerUi.serve,
+    swaggerUi.setup(spec),
+  );
 
   app.use(helmet());
   app.use(cors());
@@ -27,7 +32,14 @@ function createApp({ repos, rateLimitMax = 300 }) {
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
   const api = express.Router();
-  api.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: rateLimitMax, standardHeaders: 'draft-8', legacyHeaders: false }));
+  api.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: rateLimitMax,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+    }),
+  );
   api.use('/categories', categoriesRouter(repos));
   api.use('/products/:id/movements', movementsRouter(repos));
   api.use('/products', productsRouter(repos));

@@ -34,10 +34,9 @@ function createMovementRepository(pool) {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        const { rows } = await client.query(
-          'SELECT stock FROM products WHERE id = $1 FOR UPDATE',
-          [productId],
-        );
+        const { rows } = await client.query('SELECT stock FROM products WHERE id = $1 FOR UPDATE', [
+          productId,
+        ]);
         if (rows.length === 0) {
           await client.query('ROLLBACK');
           return null;

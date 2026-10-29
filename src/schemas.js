@@ -50,10 +50,10 @@ const productQuery = z
     sort: z.enum(['name', 'price', 'stock', 'createdAt']).default('name'),
     order: z.enum(['asc', 'desc']).default('asc'),
   })
-  .refine(
-    (d) => d.minPrice === undefined || d.maxPrice === undefined || d.minPrice <= d.maxPrice,
-    { message: 'minPrice no puede ser mayor que maxPrice', path: ['minPrice'] },
-  );
+  .refine((d) => d.minPrice === undefined || d.maxPrice === undefined || d.minPrice <= d.maxPrice, {
+    message: 'minPrice no puede ser mayor que maxPrice',
+    path: ['minPrice'],
+  });
 
 const movementInput = z.object({
   type: z.enum(['in', 'out']),
