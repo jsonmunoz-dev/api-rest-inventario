@@ -7,6 +7,12 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 [![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-yellow.svg)](LICENSE)
 
+### 🔗 [Ver demo en vivo](https://api-rest-inventario.vercel.app)
+
+Página simple para vender y reponer productos usando la API real. La documentación Swagger está en [`/docs`](https://api-rest-inventario.vercel.app/docs). Los datos son ficticios y no hace falta instalar nada. La primera carga puede tardar unos segundos porque la base de datos gratuita se suspende cuando no se usa.
+
+![Página de inicio de la demo](docs/inventario.png)
+
 API REST para gestionar el **inventario** de una tienda: categorías, productos y movimientos de stock.
 Está documentada con **OpenAPI 3 / Swagger UI**, se puede levantar con **Docker** y tiene tests unitarios y de integración contra PostgreSQL.
 
@@ -53,6 +59,14 @@ tests/
 ├── *.test.js            # endpoints con repositorios en memoria
 └── integration/         # repositorios contra PostgreSQL real
 ```
+
+## Demo pública
+
+La demo corre en **Vercel** con **PostgreSQL en Neon** ([`vercel.json`](vercel.json)):
+
+- `/`: página para personas no técnicas, con tabla de productos y botones para vender y reponer que usan la API real.
+- `/docs`: Swagger UI para probar cada endpoint.
+- Un **Vercel Cron** llama una vez al día a `GET /api/demo/reset` (protegido con `CRON_SECRET`) y restaura el inventario de ejemplo.
 
 ## Cómo ejecutarlo
 
