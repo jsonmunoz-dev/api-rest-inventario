@@ -16,10 +16,12 @@ function showMessage(text, kind) {
   message.hidden = false;
 }
 
-function cell(text, className) {
+// label: nombre de la columna, usado en el diseño de tarjetas para pantallas pequeñas.
+function cell(text, className, label) {
   const td = document.createElement('td');
   td.textContent = text;
   if (className) td.className = className;
+  if (label) td.dataset.label = label;
   return td;
 }
 
@@ -54,10 +56,10 @@ function render(products) {
       actionButton('Reponer 5', p, 'in', 5, true),
     );
     tr.append(
-      cell(p.name),
-      cell(p.category.name, 'muted'),
-      cell(clp.format(p.price), 'num'),
-      cell(String(p.stock), 'num strong'),
+      cell(p.name, 'name'),
+      cell(p.category.name, 'muted', 'Categoría'),
+      cell(clp.format(p.price), 'num', 'Precio'),
+      cell(String(p.stock), 'num strong', 'Stock'),
       status,
       actions,
     );

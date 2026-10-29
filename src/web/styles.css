@@ -97,6 +97,7 @@ a {
 }
 
 .table-wrap {
+  position: relative;
   overflow-x: auto;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -173,6 +174,62 @@ summary {
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: -1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Pantallas pequeñas: cada producto se muestra como una tarjeta con sus botones visibles. */
+@media (max-width: 640px) {
+  thead {
+    display: none;
+  }
+
+  tbody,
+  tr,
+  td {
+    display: block;
+  }
+
+  tr {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  td {
+    border: 0;
+    padding: 2px 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  td.name {
+    font-weight: 650;
+    font-size: 1.02rem;
+  }
+
+  td[data-label]::before {
+    content: attr(data-label) ': ';
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  td.num {
+    text-align: left;
+  }
+
+  td.actions {
+    display: flex;
+    margin-top: 8px;
+  }
+
+  td.actions button {
+    flex: 1;
+    padding: 9px 10px;
+  }
 }
