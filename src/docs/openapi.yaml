@@ -1,0 +1,357 @@
+openapi: 3.0.3
+info:
+  title: API REST de Inventario
+  version: 1.0.0
+  description: |
+    API para gestionar categorías, productos y movimientos de stock.
+
+    - El stock **no se edita directamente**: solo cambia con movimientos de entrada (`in`) o salida (`out`).
+    - Las salidas que dejarían el stock negativo responden **409**.
+    - Los listados están paginados (`page`, `pageSize`, máximo 100).
+  contact:
+    name: Jheyson Muñoz
+    url: https://github.com/jsonmunoz-dev
+  license:
+    name: MIT
+servers:
+  - url: /api/v1
+tags:
+  - name: Categorías
+  - name: Productos
+  - name: Movimientos
+
+paths:
+  /categories:
+    get:
+      tags: [Categorías]
+      summary: Listar categorías
+      responses:
+        '200':
+          description: Categorías con la cantidad de productos de cada una
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Category' }
+    post:
+      tags: [Categorías]
+      summary: Crear categoría
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '201':
+          description: Categoría creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /categories/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Categorías]
+      summary: Obtener categoría
+      responses:
+        '200':
+          description: Categoría
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Categorías]
+      summary: Reemplazar categoría
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Categorías]
+      summary: Eliminar categoría (solo si no tiene productos)
+      responses:
+        '204': { description: Eliminada }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /products:
+    get:
+      tags: [Productos]
+      summary: Listar productos con filtros, orden y paginación
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: q
+          in: query
+          description: Búsqueda por nombre o SKU (sin distinguir mayúsculas)
+          schema: { type: string }
+        - name: categoryId
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: minPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: maxPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: lowStock
+          in: query
+          description: '`true` = productos con stock menor o igual al mínimo'
+          schema: { type: string, enum: ['true', 'false'] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [name, price, stock, createdAt], default: name }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        '200':
+          description: Página de productos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [Productos]
+      summary: Crear producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductCreate' }
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /products/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Productos]
+      summary: Obtener producto
+      responses:
+        '200':
+          description: Producto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Productos]
+      summary: Actualizar parcialmente un producto
+      description: El stock no se puede modificar aquí; usa los movimientos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductUpdate' }
+      responses:
+        '200':
+          description: Producto actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Productos]
+      summary: Eliminar producto (y su historial de movimientos)
+      responses:
+        '204': { description: Eliminado }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /products/{id}/movements:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Movimientos]
+      summary: Historial de movimientos del producto (más reciente primero)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Página de movimientos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageMeta'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Movement' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Movimientos]
+      summary: Registrar entrada o salida de stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MovementInput' }
+            example: { type: out, quantity: 2, note: 'Venta boleta 1234' }
+      responses:
+        '201':
+          description: Movimiento registrado y stock resultante
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movement: { $ref: '#/components/schemas/Movement' }
+                  stock: { type: integer, example: 10 }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    ValidationError:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: Datos inválidos
+            details: [{ field: price, message: Number must be greater than or equal to 0 }]
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Conflicto con el estado actual (duplicado, stock insuficiente, relación existente)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        details: {}
+
+    PageMeta:
+      type: object
+      properties:
+        page: { type: integer, example: 1 }
+        pageSize: { type: integer, example: 20 }
+        total: { type: integer, example: 42 }
+        totalPages: { type: integer, example: 3 }
+
+    CategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80, example: Computación }
+        description: { type: string, nullable: true, maxLength: 500 }
+
+    Category:
+      allOf:
+        - $ref: '#/components/schemas/CategoryInput'
+        - type: object
+          properties:
+            id: { type: integer, example: 1 }
+            productCount: { type: integer, example: 3 }
+            createdAt: { type: string, format: date-time }
+
+    ProductUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        sku: { type: string, pattern: '^[A-Za-z0-9-]{3,40}$', example: NB-001 }
+        name: { type: string, minLength: 2, maxLength: 150, example: Notebook 14" Ryzen 5 }
+        description: { type: string, nullable: true }
+        price: { type: number, minimum: 0, example: 549990 }
+        minStock: { type: integer, minimum: 0, example: 3 }
+        categoryId: { type: integer, minimum: 1, example: 1 }
+
+    ProductCreate:
+      allOf:
+        - $ref: '#/components/schemas/ProductUpdate'
+        - type: object
+          required: [sku, name, price, categoryId]
+          properties:
+            initialStock: { type: integer, minimum: 0, default: 0, example: 10 }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        sku: { type: string, example: NB-001 }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        price: { type: number, example: 549990 }
+        stock: { type: integer, example: 12 }
+        minStock: { type: integer, example: 3 }
+        lowStock: { type: boolean, description: 'stock <= minStock' }
+        category:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    MovementInput:
+      type: object
+      required: [type, quantity]
+      properties:
+        type: { type: string, enum: [in, out] }
+        quantity: { type: integer, minimum: 1 }
+        note: { type: string, nullable: true, maxLength: 500 }
+
+    Movement:
+      allOf:
+        - $ref: '#/components/schemas/MovementInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            productId: { type: integer }
+            createdAt: { type: string, format: date-time }

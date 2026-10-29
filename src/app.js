@@ -2,6 +2,8 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
+const swaggerUi = require('swagger-ui-express');
+const { loadSpec } = require('./docs');
 const { categoriesRouter } = require('./routes/categories');
 const { productsRouter } = require('./routes/products');
 const { movementsRouter } = require('./routes/movements');
@@ -12,10 +14,16 @@ const { notFound } = require('./errors');
 function createApp({ repos, rateLimitMax = 300 }) {
   const app = express();
 
+  // Swagger UI usa scripts inline, por eso se relaja la CSP solo en /docs.
+  const spec = loadSpec();
+  app.get('/docs/openapi.json', (_req, res) => res.json(spec));
+  app.use('/docs', helmet({ contentSecurityPolicy: false }), swaggerUi.serve, swaggerUi.setup(spec));
+
   app.use(helmet());
   app.use(cors());
   app.use(express.json({ limit: '100kb' }));
 
+  app.get('/', (_req, res) => res.redirect('/docs'));
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
   const api = express.Router();
