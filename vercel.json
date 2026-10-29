@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "api": {
+      "root": ".",
+      "entrypoint": "src/index.js",
+      "functions": {
+        "src/index.js": {
+          "includeFiles": "{src/web/**,src/docs/openapi.yaml,node_modules/swagger-ui-dist/**}"
+        }
+      }
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": { "service": "api" } }],
+  "crons": [{ "path": "/api/demo/reset", "schedule": "0 7 * * *" }]
+}
