@@ -4,6 +4,7 @@ const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
 const { categoriesRouter } = require('./routes/categories');
 const { productsRouter } = require('./routes/products');
+const { movementsRouter } = require('./routes/movements');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./errors');
 
@@ -20,6 +21,7 @@ function createApp({ repos, rateLimitMax = 300 }) {
   const api = express.Router();
   api.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: rateLimitMax, standardHeaders: 'draft-8', legacyHeaders: false }));
   api.use('/categories', categoriesRouter(repos));
+  api.use('/products/:id/movements', movementsRouter(repos));
   api.use('/products', productsRouter(repos));
   app.use('/api/v1', api);
 
