@@ -2,7 +2,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
-  { ignores: ['node_modules', 'coverage'] },
+  { ignores: ['node_modules', 'coverage', '.vercel'] },
   js.configs.recommended,
   {
     languageOptions: {
@@ -13,5 +13,9 @@ module.exports = [
     rules: {
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
+  },
+  {
+    files: ['src/web/app.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
   },
 ];

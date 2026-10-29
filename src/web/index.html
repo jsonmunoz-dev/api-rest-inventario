@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventario · Demo de API REST</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Inventario de una tienda</h1>
+        <p class="lead">
+          Esta página usa una <strong>API REST</strong> real conectada a una base de datos
+          PostgreSQL. Prueba vender o reponer productos: el stock se actualiza en la base de datos y
+          la API impide vender más unidades de las que hay.
+        </p>
+        <p class="note">
+          Datos ficticios. Se reinician automáticamente cada día. ·
+          <a href="/docs">Para desarrolladores: documentación Swagger</a> ·
+          <a href="https://github.com/jsonmunoz-dev/api-rest-inventario">Código en GitHub</a>
+        </p>
+      </header>
+
+      <section class="toolbar" aria-label="Filtros">
+        <label
+          ><input type="checkbox" id="low-stock" /> Mostrar solo productos con stock bajo</label
+        >
+        <span id="summary" class="muted"></span>
+      </section>
+
+      <p id="message" class="message" role="status" aria-live="polite" hidden></p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th class="num">Precio</th>
+              <th class="num">Stock</th>
+              <th>Estado</th>
+              <th><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody id="products">
+            <tr>
+              <td colspan="6" class="muted">
+                Cargando productos… (la primera carga puede tardar unos segundos)
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>¿Qué está pasando por detrás?</summary>
+        <ul>
+          <li>La tabla se carga con <code>GET /api/v1/products</code>.</li>
+          <li>
+            “Vender 1” llama a <code>POST /api/v1/products/:id/movements</code> con
+            <code>{"type": "out", "quantity": 1}</code>.
+          </li>
+          <li>
+            La salida se registra en una transacción con <code>SELECT … FOR UPDATE</code>; si no hay
+            stock suficiente, la API responde <strong>409</strong> y no cambia nada.
+          </li>
+        </ul>
+      </details>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>
