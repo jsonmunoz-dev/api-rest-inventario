@@ -8,11 +8,14 @@ const { categoriesRouter } = require('./routes/categories');
 const { productsRouter } = require('./routes/products');
 const { movementsRouter } = require('./routes/movements');
 const { errorHandler } = require('./middleware/errorHandler');
+const { demoRouter } = require('./routes/demo');
 const { notFound } = require('./errors');
+const { webAssets } = require('./web');
 
 // Los repositorios se inyectan para poder testear la API sin base de datos.
-function createApp({ repos, rateLimitMax = 300 }) {
+function createApp({ repos, rateLimitMax = 300, trustProxy = false, demo = {} }) {
   const app = express();
+  if (trustProxy) app.set('trust proxy', 1);
 
   // Swagger UI usa scripts inline, por eso se relaja la CSP solo en /docs.
   const spec = loadSpec();
@@ -28,7 +31,10 @@ function createApp({ repos, rateLimitMax = 300 }) {
   app.use(cors());
   app.use(express.json({ limit: '100kb' }));
 
-  app.get('/', (_req, res) => res.redirect('/docs'));
+  // Página de inicio para probar la API sin conocimientos técnicos.
+  for (const [route, asset] of Object.entries(webAssets)) {
+    app.get(route, (_req, res) => res.type(asset.type).send(asset.content));
+  }
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
   const api = express.Router();
@@ -44,6 +50,7 @@ function createApp({ repos, rateLimitMax = 300 }) {
   api.use('/products/:id/movements', movementsRouter(repos));
   api.use('/products', productsRouter(repos));
   app.use('/api/v1', api);
+  app.use('/api/demo', demoRouter(demo));
 
   app.use((_req, _res, next) => next(notFound('Ruta no encontrada')));
   app.use(errorHandler);
